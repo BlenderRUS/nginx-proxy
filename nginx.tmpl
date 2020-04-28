@@ -225,6 +225,8 @@ upstream {{ $upstream_name }} {
 {{/* Get the VIRTUAL_ROOT By containers w/ use fastcgi root */}}
 {{ $vhost_root := or (first (groupByKeys $containers "Env.VIRTUAL_ROOT")) "/var/www/public" }}
 
+{{/* Get the VIRTUAL_PORT By containers w/ or fallback to 80 */}}
+{{ $vhost_port := or (first (groupByKeys $containers "Env.VIRTUAL_PORT")) "80" }}
 
 {{/* Get the first cert name defined by containers w/ the same vhost */}}
 {{ $certName := (first (groupByKeys $containers "Env.CERT_NAME")) }}
@@ -321,6 +323,7 @@ server {
 		grpc_pass {{ trim $proto }}://{{ trim $upstream_name }};
 		{{ else }}
 		proxy_pass {{ trim $proto }}://{{ trim $upstream_name }};
+                proxy_redirect {{ trim $proto }}://{{ trim $upstream_name }}:{{ $vhost_port }}/ {{ trim $proto }}://{{ trim $upstream_name }}/;
 		{{ end }}
 
 		{{ if (exists (printf "/etc/nginx/htpasswd/%s" $host)) }}
